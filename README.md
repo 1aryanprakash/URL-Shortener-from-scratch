@@ -12,6 +12,11 @@ It converts long URLs into short URLs and redirects users to the original URL.
 * Generate unique short IDs using Nanoid
 * Store URL mappings in MongoDB
 * Redirect short URLs to original URLs
+* URL validation
+* Error handling with appropriate HTTP status codes
+* Consistent API response structure
+* MongoDB schema validation
+* Automatic `createdAt` and `updatedAt` timestamps
 * REST API using Express.js
 * Environment variables for database configuration
 
@@ -62,14 +67,25 @@ Request Body:
 }
 ```
 
-Response:
+Successful Response:
 
 ```json
 {
-  "originalUrl": "https://example.com",
-  "shortId": "abc123"
+  "success": true,
+  "message": "Short URL created successfully",
+  "data": {
+    "originalUrl": "https://example.com",
+    "shortId": "abc123"
+  }
 }
 ```
+
+Possible responses:
+
+* `201 Created` — Short URL created successfully
+* `400 Bad Request` — URL is missing or invalid
+* `409 Conflict` — Short ID already exists
+* `500 Internal Server Error` — Server/database error
 
 ### 2. Redirect to Original URL
 
@@ -82,6 +98,12 @@ GET /abc123
 ```
 
 The server finds the corresponding URL from MongoDB and redirects the user to the original URL.
+
+Possible responses:
+
+* `302 Found` — Redirect to original URL
+* `404 Not Found` — Short URL does not exist
+* `500 Internal Server Error` — Server/database error
 
 ### 3. Health Check
 
@@ -130,16 +152,15 @@ http://localhost:4000
 
 ## Future Improvements
 
-* URL validation
-* Error handling
-* User authentication
+* User authentication with JWT
 * Custom short aliases
 * Click analytics
 * URL expiration
 * Redis caching
 * Rate limiting
-* Deployment
 * Automated testing
+* Deployment
+* API documentation
 
 ## Author
 

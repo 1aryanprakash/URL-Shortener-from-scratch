@@ -3,7 +3,7 @@ import connectDB from './backend/src/config/db.js';
 import urlRoutes from './backend/src/routes/urlRoutes.js';
 connectDB();
 const app = express();
-app.use(express.json())
+app.use(express.json());
 app.use("/",urlRoutes);
 
 

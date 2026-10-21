@@ -4,20 +4,36 @@ import Url from "../models/Url.js";
 const createShortUrl = async (req, res) => {
     try {
         const url = req.body.url?.trim();
+        const customAlias = req.body.customAlias?.trim();
+        if (customAlias && !/^[a-zA-Z0-9_-]+$/.test(customAlias)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid Custom Alias"
+            })
+        }
         if (!url) {
             return res.status(400).json({
+                success: false,
                 message: "URL is required"
             });
         }
         // URL format validation
         try {
-            new URL(url);
+            const parsedUrl = new URL(url);
+
+            if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Only HTTP and HTTPS URLs are allowed"
+                });
+            }
         } catch (err) {
             return res.status(400).json({
+                success: false,
                 message: "Invalid URL"
             });
         }
-        const id = nanoid();
+        const id = customAlias ? customAlias : nanoid();
 
         const newUrl = new Url({
             shortId: id,
@@ -39,10 +55,12 @@ const createShortUrl = async (req, res) => {
         console.log(err);
         if (err.code === 11000) {
             return res.status(409).json({
-                message: "Short ID already exists"
+                success: false,
+                message: "Custom alias or Short ID already exists"
             });
         }
         return res.status(500).json({
+            success:false,
             message: "Internal server error"
         });
     }
@@ -60,6 +78,18 @@ const getOriginalUrl = async (req, res) => {
                 message: "Short URL not found"
             });
         }
+        if (urlData.expiresAt <= new Date()) {
+            return res.status(410).json({
+                success: false,
+                message: "URL has expired"
+            });
+        }
+
+        //click count increment
+        await Url.findOneAndUpdate(
+            { shortId: id },
+            { $inc: { clicks: 1 } }
+        );
 
         res.redirect(urlData.originalUrl);
 
@@ -74,9 +104,43 @@ const getOriginalUrl = async (req, res) => {
 };
 
 
+const getUrlStats = async (req, res) => {
+    try {
+        const id = req.params.shortId;
+
+        const urlData = await Url.findOne({ shortId: id });
+
+        if (!urlData) {
+            return res.status(404).json({
+                success: false,
+                message: "Short URL not found"
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            data: {
+                shortId: urlData.shortId,
+                originalUrl: urlData.originalUrl,
+                clicks: urlData.clicks,
+                createdAt: urlData.createdAt,
+                expiresAt: urlData.expiresAt
+            }
+        })
+    }
+    catch (err) {
+        console.log(err);
+
+        return res.status(500).json({
+            success: false,
+            message: "Internal Server Error"
+        });
+
+    }
+
+}
 
 
 
 
-
-export { createShortUrl, getOriginalUrl };
+export { createShortUrl, getOriginalUrl, getUrlStats };

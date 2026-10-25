@@ -20,7 +20,7 @@ function App() {
     setCopied(false)
 
     try {
-      const response = await fetch('http://localhost:4000/shorten', {
+      const response = await fetch('https://url-shortener-api-6w4r.onrender.com/shorten', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -35,7 +35,7 @@ function App() {
         return
       }
 
-      setShortUrl(`http://localhost:4000/${data.data.shortId}`)
+      setShortUrl(`https://url-shortener-api-6w4r.onrender.com/${data.data.shortId}`)
     } catch (err) {
       setError('Backend se connect nahi ho pa raha. Check karo server running hai ya nahi.')
       console.error(err)

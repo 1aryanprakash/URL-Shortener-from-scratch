@@ -33,14 +33,46 @@ const createShortUrl = async (req, res) => {
                 message: "Invalid URL"
             });
         }
-        const id = customAlias ? customAlias : nanoid();
+        
+        
+        let id;
+        let newUrl;
 
-        const newUrl = new Url({
-            shortId: id,
-            originalUrl: url
-        });
+        if (customAlias) {
+            id = customAlias;
 
-        await newUrl.save();
+            newUrl = new Url({
+                shortId: id,
+                originalUrl: url
+            });
+
+            await newUrl.save();
+        } else {
+            let saved = false;
+
+            for (let attempt = 0; attempt < 3; attempt++) {
+                id = nanoid(7);
+
+                newUrl = new Url({
+                    shortId: id,
+                    originalUrl: url
+                });
+
+                try {
+                    await newUrl.save();
+                    saved = true;
+                    break;
+                } catch (err) {
+                    if (err.code !== 11000) {
+                        throw err;
+                    }
+                }
+            }
+
+            if (!saved) {
+                throw new Error("Unable to generate a unique short ID");
+            }
+        }
 
         res.status(201).json({
             "success": true,
@@ -60,7 +92,7 @@ const createShortUrl = async (req, res) => {
             });
         }
         return res.status(500).json({
-            success:false,
+            success: false,
             message: "Internal server error"
         });
     }
